@@ -1,12 +1,12 @@
 # -:- encoding: utf8 -:-
 # Copyright 2011 Omniscale GmbH & Co. KG
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,7 +27,7 @@ class ParserTestBase(object):
         self.coords = []
         self.ways = []
         self.relations = []
-    
+
     def parse_nodes(self, nodes):
         self.nodes.extend(nodes)
     def parse_coords(self, coords):
@@ -49,51 +49,60 @@ class ParserTestBase(object):
         )
         osm_filename = os.path.join(os.path.dirname(__file__), self.osm_filename)
         parser.parse(osm_filename)
-    
+
     def test_parse_result(self):
         self.parse()
         eq_(len(self.nodes), 1)
         eq_(self.nodes[0],
-            (2, {'name': 'test', 'created_by': 'hand'}, (10.0, 51.0)))
-        
+            (2, {'name': 'test', 'created_by': 'hand'}, (10.0, 51.0),
+            (1, 1, '2011-12-16T13:24:15Z'), (1, 'testbot'))
+        )
+
         eq_(len(self.coords), 2)
         eq_(self.coords[0], (1, 10.0, 50.0))
         eq_(self.coords[1], (2, 10.0, 51.0))
-        
+
         eq_(len(self.ways), 1)
         eq_(self.ways[0],
-            (3, {'highway': 'primary'}, [1, 2]))
+            (3, {'highway': 'primary'}, [1, 2],
+            (3, 5, '2010-07-16T17:36:18Z'), (2, 'testbot'))
+        )
 
         eq_(len(self.relations), 1)
         eq_(self.relations[0],
-            (4, {'name': u'Üµlåû†é'}, [(123, 'way', 'outer'), (124, 'way', 'inner')]))
+            (4, {'name': u'Üµlåû†é'}, [(123, 'way', 'outer'), (124, 'way', 'inner')], (2, 4, '2010-05-20T19:38:47Z'), (1, 'testbot'))
+        )
+
 
 class ParserTestBaseWithFilter(ParserTestBase):
     def nodes_filter(self, tags):
         for tag in tags.keys():
             if tag != 'name':
                 del tags[tag]
-    
+
     ways_filter = nodes_filter
     def relations_filter(self, tags):
         tags.clear()
-    
+
     def test_parse_result(self):
         self.parse()
         eq_(len(self.nodes), 1)
         eq_(self.nodes[0],
-            (2, {'name': 'test'}, (10.0, 51.0)))
-        
+            (2, {'name': 'test'}, (10.0, 51.0),
+            (1, 1, '2011-12-16T13:24:15Z'), (1, 'testbot'))
+        )
+
         eq_(len(self.coords), 2)
         eq_(self.coords[0], (1, 10.0, 50.0))
         eq_(self.coords[1], (2, 10.0, 51.0))
-        
+
         eq_(len(self.ways), 1)
         eq_(self.ways[0],
-            (3, {}, [1, 2]))
+            (3, {}, [1, 2], (3, 5, '2010-07-16T17:36:18Z'), (2, 'testbot'))
+        )
 
         eq_(len(self.relations), 0)
-        
+
 class TestXML(ParserTestBase):
     osm_filename = 'test.osm'
 

@@ -1,11 +1,11 @@
 # Copyright 2011 Omniscale GmbH & Co. KG
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,7 +30,23 @@ class XMLParser(object):
         self.ways_tag_filter = ways_tag_filter
         self.relations_tag_filter = relations_tag_filter
         self.marshal_elem_data = marshal_elem_data
-    
+
+    def get_version(self, elem):
+        if 'version' in elem.attrib and \
+           'changeset' in elem.attrib and \
+           'timestamp' in elem.attrib:
+            return (int(elem.attrib['version']),
+                    int(elem.attrib['changeset']),
+                    elem.attrib['timestamp'])
+        else:
+            return None
+
+    def get_user(self, elem):
+        if 'uid' in elem.attrib and 'user' in elem.attrib:
+            return (int(elem.attrib['uid']), elem.attrib['user'])
+        else:
+            return None
+
     def parse(self, xml):
         with log_file_on_exception(xml):
             coords = []
@@ -41,7 +57,7 @@ class XMLParser(object):
             refs = []
             members = []
             root, context = iterparse(xml)
-            
+
             for event, elem in context:
                 if event == 'start': continue
                 if elem.tag == 'tag':
@@ -49,6 +65,8 @@ class XMLParser(object):
                 elif elem.tag == 'node':
                     osmid = int(elem.attrib['id'])
                     x, y = float(elem.attrib['lon']), float(elem.attrib['lat'])
+                    version = self.get_version(elem)
+                    user = self.get_user(elem)
                     if self.coords_callback:
                         coords.append((osmid, x, y))
                     if self.nodes_tag_filter:
@@ -57,7 +75,7 @@ class XMLParser(object):
                         if self.marshal_elem_data:
                             nodes.append((osmid, dumps((tags, (x, y)), 2)))
                         else:
-                            nodes.append((osmid, tags, (x, y)))
+                            nodes.append((osmid, tags, (x, y), version, user))
                     tags = {}
                 elif elem.tag == 'nd':
                     refs.append(int(elem.attrib['ref']))
@@ -65,27 +83,32 @@ class XMLParser(object):
                     members.append((int(elem.attrib['ref']), elem.attrib['type'], elem.attrib['role']))
                 elif elem.tag == 'way':
                     osm_id = int(elem.attrib['id'])
+                    version = self.get_version(elem)
+                    user = self.get_user(elem)
                     if self.ways_tag_filter:
                         self.ways_tag_filter(tags)
                     if self.ways_callback:
                         if self.marshal_elem_data:
                             ways.append((osm_id, dumps((tags, refs), 2)))
                         else:
-                            ways.append((osm_id, tags, refs))
+                            ways.append((osm_id, tags, refs, version, user))
                     refs = []
                     tags = {}
                 elif elem.tag == 'relation':
                     osm_id = int(elem.attrib['id'])
+                    version = self.get_version(elem)
+                    user = self.get_user(elem)
                     if self.relations_tag_filter:
                         self.relations_tag_filter(tags)
                     if tags and self.relations_callback:
                         if self.marshal_elem_data:
                             relations.append((osm_id, dumps((tags, members), 2)))
                         else:
-                            relations.append((osm_id, tags, members))
+                            relations.append((osm_id, tags, members, version,
+                                              user))
                     members = []
                     tags = {}
-            
+
                 if len(coords) >= 512:
                     self.coords_callback(coords)
                     coords = []
@@ -100,7 +123,7 @@ class XMLParser(object):
                     ways = []
 
                 root.clear()
-        
+
             if self.coords_callback:
                 self.coords_callback(coords)
             if self.nodes_callback:
