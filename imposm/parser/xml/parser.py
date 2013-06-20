@@ -22,9 +22,10 @@ from imposm.parser.xml.util import log_file_on_exception, iterparse
 
 class XMLParser(object):
     def __init__(self, nodes_callback=None, ways_callback=None,
-        relations_callback=None, coords_callback=None, nodes_tag_filter=None,
-        ways_tag_filter=None, relations_tag_filter=None,
-        marshal_elem_data=False, with_metadata=False):
+                 relations_callback=None, coords_callback=None,
+                 nodes_tag_filter=None, ways_tag_filter=None,
+                 relations_tag_filter=None, marshal_elem_data=False,
+                 with_metadata=False):
         self.nodes_callback = nodes_callback
         self.ways_callback = ways_callback
         self.relations_callback = relations_callback
@@ -75,12 +76,12 @@ class XMLParser(object):
                         self.nodes_tag_filter(tags)
                     if tags and self.nodes_callback:
                         if self.marshal_elem_data:
-                            node = (osmid, dumps((tags, (x, y)), 2))
+                            nodes.append((osmid, dumps((tags, (x, y)), 2)))
+                        elif self.with_metadata:
+                            nodes.append((osmid, tags, (x, y),
+                                          self.get_metadata(elem)))
                         else:
-                            node = (osmid, tags, (x, y))
-                        if self.with_metadata:
-                            node = node + (self.get_metadata(elem),)
-                        nodes.append(node)
+                            nodes.append((osmid, tags, (x, y)))
                     tags = {}
                 elif elem.tag == 'nd':
                     refs.append(int(elem.attrib['ref']))
@@ -92,12 +93,12 @@ class XMLParser(object):
                         self.ways_tag_filter(tags)
                     if self.ways_callback:
                         if self.marshal_elem_data:
-                            way = (osm_id, dumps((tags, refs), 2))
+                            ways.append((osm_id, dumps((tags, refs), 2)))
+                        elif self.with_metadata:
+                            ways.append((osm_id, tags, refs,
+                                         self.get_metadata(elem)))
                         else:
-                            way = (osm_id, tags, refs)
-                        if self.with_metadata:
-                            way = way + (self.get_metadata(elem),)
-                        ways.append(way)
+                            ways.append((osm_id, tags, refs))
                     refs = []
                     tags = {}
                 elif elem.tag == 'relation':
@@ -106,12 +107,16 @@ class XMLParser(object):
                         self.relations_tag_filter(tags)
                     if tags and self.relations_callback:
                         if self.marshal_elem_data:
-                            relation = (osm_id, dumps((tags, members), 2))
+                            relations.append(
+                                (osm_id, dumps((tags, members), 2))
+                            )
+                        elif self.with_metadata:
+                            relations.append(
+                                (osm_id, tags, members,
+                                 self.get_metadata(elem))
+                            )
                         else:
-                            relation = (osm_id, tags, members)
-                        if self.with_metadata:
-                            relation = relation + (self.get_metadata(elem),)
-                        relations.append(relation)
+                            relations.append((osm_id, tags, members))
                     members = []
                     tags = {}
 
