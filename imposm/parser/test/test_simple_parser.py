@@ -15,6 +15,7 @@
 
 import os
 from imposm.parser import OSMParser
+from imposm.parser.util import OSMMetadata
 from nose.tools import eq_
 
 class ParserTestBase(object):
@@ -46,6 +47,7 @@ class ParserTestBase(object):
             nodes_tag_filter=self.nodes_filter,
             ways_tag_filter=self.ways_filter,
             relations_tag_filter=self.relations_filter,
+            with_metadata=True
         )
         osm_filename = os.path.join(os.path.dirname(__file__), self.osm_filename)
         parser.parse(osm_filename)
@@ -55,7 +57,7 @@ class ParserTestBase(object):
         eq_(len(self.nodes), 1)
         eq_(self.nodes[0],
             (2, {'name': 'test', 'created_by': 'hand'}, (10.0, 51.0),
-            (1, 1, '2011-12-16T13:24:15Z'), (1, 'testbot'))
+            OSMMetadata(1, 1, '2011-12-16T13:24:15Z', 1, 'testbot'))
         )
 
         eq_(len(self.coords), 2)
@@ -65,12 +67,13 @@ class ParserTestBase(object):
         eq_(len(self.ways), 1)
         eq_(self.ways[0],
             (3, {'highway': 'primary'}, [1, 2],
-            (3, 5, '2010-07-16T17:36:18Z'), (2, 'testbot'))
+            OSMMetadata(3, 5, '2010-07-16T17:36:18Z', 2, 'testbot'))
         )
 
         eq_(len(self.relations), 1)
         eq_(self.relations[0],
-            (4, {'name': u'Üµlåû†é'}, [(123, 'way', 'outer'), (124, 'way', 'inner')], (2, 4, '2010-05-20T19:38:47Z'), (1, 'testbot'))
+            (4, {'name': u'Üµlåû†é'}, [(123, 'way', 'outer'), (124, 'way', 'inner')],
+             OSMMetadata(2, 4, '2010-05-20T19:38:47Z', 1, 'testbot'))
         )
 
 
@@ -89,7 +92,7 @@ class ParserTestBaseWithFilter(ParserTestBase):
         eq_(len(self.nodes), 1)
         eq_(self.nodes[0],
             (2, {'name': 'test'}, (10.0, 51.0),
-            (1, 1, '2011-12-16T13:24:15Z'), (1, 'testbot'))
+            OSMMetadata(1, 1, '2011-12-16T13:24:15Z', 1, 'testbot'))
         )
 
         eq_(len(self.coords), 2)
@@ -98,7 +101,8 @@ class ParserTestBaseWithFilter(ParserTestBase):
 
         eq_(len(self.ways), 1)
         eq_(self.ways[0],
-            (3, {}, [1, 2], (3, 5, '2010-07-16T17:36:18Z'), (2, 'testbot'))
+            (3, {}, [1, 2],
+             OSMMetadata(3, 5, '2010-07-16T17:36:18Z', 2, 'testbot'))
         )
 
         eq_(len(self.relations), 0)
