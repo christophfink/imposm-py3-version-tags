@@ -16,7 +16,7 @@ import mmap
 import multiprocessing
 import re
 
-from Queue import Empty
+from queue import Empty
 
 from imposm.parser.xml.parser import XMLParser
 from imposm.parser.util import setproctitle
@@ -94,7 +94,7 @@ class XMLMultiProcParser(object):
     def parse(self, stream):
         assert not self.pool
 
-        for _ in xrange(self.pool_size):
+        for _ in range(self.pool_size):
             proc = XMLParserProcess(self.mmap_pool, self.mmap_queue, nodes_callback=self.nodes_callback,
                 coords_callback=self.coords_callback, ways_callback=self.ways_callback,
                 relations_callback=self.relations_callback,
@@ -256,7 +256,7 @@ if __name__ == '__main__':
                     break
                 count += len(nodes)
                 queue.task_done()
-            print type, count
+            print(type, count)
         return count
 
 

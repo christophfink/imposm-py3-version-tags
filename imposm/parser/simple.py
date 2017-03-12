@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import with_statement
+
 
 import multiprocessing
 import sys
 import time
 
-from Queue import Empty
+from queue import Empty
 
 from imposm.parser.util import default_concurrency, fileinput, setproctitle
 
@@ -98,7 +98,7 @@ class OSMParser(object):
 
         def parse_it():
             setproctitle('imposm parser')
-            queues = dict([(type, q) for type, (q, c) in queues_callbacks.items()])
+            queues = dict([(type, q) for type, (q, c) in list(queues_callbacks.items())])
             
             parser = parser_class(self.concurrency,
                 ways_queue=queues.get('ways'),
@@ -111,7 +111,7 @@ class OSMParser(object):
             parser.ways_tag_filter = self.ways_tag_filter
             parser.relations_tag_filter = self.relations_tag_filter
             parser.parse(input)
-            for q in queues.values():
+            for q in list(queues.values()):
                 q.put(None)
             
         proc = multiprocessing.Process(target=parse_it)
@@ -119,7 +119,7 @@ class OSMParser(object):
         
         while queues_callbacks:
             processed = False
-            for items_type, (queue, callback) in queues_callbacks.items():
+            for items_type, (queue, callback) in list(queues_callbacks.items()):
                 try:
                     items = None
                     while True:

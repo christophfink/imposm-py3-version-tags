@@ -66,11 +66,11 @@ class ParserTestBase(object):
 
         eq_(len(self.relations), 1)
         eq_(self.relations[0],
-            (4, {'name': u'Üµlåû†é'}, [(123, 'way', 'outer'), (124, 'way', 'inner')]))
+            (4, {'name': 'Üµlåû†é'}, [(123, 'way', 'outer'), (124, 'way', 'inner')]))
 
 class ParserTestBaseWithFilter(ParserTestBase):
     def nodes_filter(self, tags):
-        for tag in tags.keys():
+        for tag in list(tags.keys()):
             if tag != 'name':
                 del tags[tag]
     

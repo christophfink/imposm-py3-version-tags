@@ -52,7 +52,7 @@ class PBFMultiProcParser(object):
     def parse(self, filename):
         pos_queue = multiprocessing.JoinableQueue(32)
         pool = []
-        for _ in xrange(self.pool_size):
+        for _ in range(self.pool_size):
             proc = PBFParserProcess(pos_queue, nodes_callback=self.nodes_callback,
                 coords_callback=self.coords_callback, ways_callback=self.ways_callback,
                 relations_callback=self.relations_callback,
@@ -89,7 +89,7 @@ if __name__ == '__main__':
                     break
                 count += len(nodes)
                 queue.task_done()
-            print type, count
+            print(type, count)
         return count
 
 

@@ -12,7 +12,7 @@ class build_ext_with_protpbuf(build_ext):
             proc = subprocess.Popen(
                 ['protoc', '--cpp_out', 'imposm/parser/pbf/', 'osm.proto'],
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        except OSError, ex:
+        except OSError as ex:
             if ex.errno == errno.ENOENT:
                 print ("Could not find protoc command. Make sure protobuf is "
                     "installed and your PATH environment is set.")
@@ -23,8 +23,8 @@ class build_ext_with_protpbuf(build_ext):
         out = proc.communicate()[0]
         result = proc.wait()
         if result != 0:
-            print "Error during protbuf files generation with protoc:"
-            print out
+            print("Error during protbuf files generation with protoc:")
+            print(out)
             raise DistutilsPlatformError("Failed to generate protbuf "
                 "CPP files with protoc.")
         build_ext.run(self)

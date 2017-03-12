@@ -12,7 +12,7 @@ VERSION_FILES = [
 ]
 
 def version_command():
-    print version()
+    print(version())
 
 def prepare_command(tag=""):
     sh('python setup.py egg_info -D -b "%s"' % tag)
