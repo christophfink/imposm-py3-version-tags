@@ -51,6 +51,7 @@ class MMapReader(object):
     def seek(self, n):
         self.m.seek(n)
 
+
 class XMLParserProcess(XMLParser, multiprocessing.Process):
     def __init__(self, mmap_pool, mmap_queue, *args, **kw):
         multiprocessing.Process.__init__(self)
@@ -70,7 +71,6 @@ class XMLParserProcess(XMLParser, multiprocessing.Process):
             self.parse(xml)
             self.mmap_queue.task_done()
             self.mmap_pool.free(mmap_idx)
-
 
 
 class XMLMultiProcParser(object):
@@ -164,6 +164,7 @@ class MMapPool(object):
         """
         self.free_queue.put(idx)
 
+
 class XMLChunker(object):
     """
     Reads and chunks OSM XML file.
@@ -183,19 +184,19 @@ class XMLChunker(object):
 
     def _skip_header(self):
         for line in self.stream:
-            if line.lstrip().startswith('<node '):
+            if line.lstrip().startswith(b'<node '):
                 self._last_line = line
                 return
 
     def _new_xml_outstream(self):
         self.current_mmap_idx, stream = self.mmap_pool.new()
         stream.seek(0)
-        stream.write("<osm xmlns:xapi='http://www.informationfreeway.org/xapi/0.6'>")
+        stream.write(b"<osm xmlns:xapi='http://www.informationfreeway.org/xapi/0.6'>")
         return stream
 
     def _finished_xml_outstream(self, last_line, stream):
         if '</osm' not in last_line:
-            stream.write('</osm>\n')
+            stream.write(b'</osm>\n')
         return self.current_mmap_idx, stream.tell()
 
     def read(self, mmaps_queue, coords_callback=None):
@@ -212,6 +213,7 @@ class XMLChunker(object):
         split = False
         line = ''
         for line in self.stream:
+            line = line.decode('utf-8')
             if coords_callback:
                 coord_node_match = coord_node_re_match(line)
                 if coord_node_match:
@@ -221,13 +223,13 @@ class XMLChunker(object):
                         coords_callback(coords)
                         coords = []
                 else:
-                    xml_nodes.write(line)
+                    xml_nodes.write(line.encode('utf-8'))
             else:
-                xml_nodes.write(line)
+                xml_nodes.write(line.encode('utf-8'))
             if split:
                 if (line.rstrip().endswith(('</way>', '</node>', '</relation>'))
-                    or (coords_callback and coord_node_match)
-                    or (not coords_callback and node_re_match(line))):
+                        or (coords_callback and coord_node_match)
+                        or (not coords_callback and node_re_match(line))):
                     mmaps_queue.put(self._finished_xml_outstream(line, xml_nodes))
                     xml_nodes = self._new_xml_outstream()
                     split = False
@@ -244,7 +246,6 @@ class XMLChunker(object):
 
 if __name__ == '__main__':
     import sys
-
 
     def count_proc(type, queue):
         def count():
@@ -263,7 +264,6 @@ if __name__ == '__main__':
     nodes_queue = multiprocessing.JoinableQueue(128)
     ways_queue = multiprocessing.JoinableQueue(128)
     relations_queue = multiprocessing.JoinableQueue(128)
-
 
     procs = [
         multiprocessing.Process(target=count_proc('nodes', nodes_queue)),
