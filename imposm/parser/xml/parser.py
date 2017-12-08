@@ -1,11 +1,11 @@
 # Copyright 2011 Omniscale GmbH & Co. KG
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,12 +16,16 @@
 
 from marshal import dumps
 
+from imposm.parser.util import OSMMetadata
 from imposm.parser.xml.util import log_file_on_exception, iterparse
+
 
 class XMLParser(object):
     def __init__(self, nodes_callback=None, ways_callback=None,
-        relations_callback=None, coords_callback=None, nodes_tag_filter=None,
-        ways_tag_filter=None, relations_tag_filter=None, marshal_elem_data=False):
+                 relations_callback=None, coords_callback=None,
+                 nodes_tag_filter=None, ways_tag_filter=None,
+                 relations_tag_filter=None, marshal_elem_data=False,
+                 with_metadata=False):
         self.nodes_callback = nodes_callback
         self.ways_callback = ways_callback
         self.relations_callback = relations_callback
@@ -30,7 +34,24 @@ class XMLParser(object):
         self.ways_tag_filter = ways_tag_filter
         self.relations_tag_filter = relations_tag_filter
         self.marshal_elem_data = marshal_elem_data
-    
+        self.with_metadata = with_metadata
+
+    def _get_int_or_none(self, obj, key):
+        if key in obj:
+            return int(obj[key])
+        else:
+            return None
+
+    def get_metadata(self, elem):
+        meta = OSMMetadata(
+            version=self._get_int_or_none(elem.attrib, 'version'),
+            changeset=self._get_int_or_none(elem.attrib, 'changeset'),
+            timestamp=elem.attrib.get('timestamp'),
+            user_id=self._get_int_or_none(elem.attrib, 'uid'),
+            user_name=elem.attrib.get('user')
+        )
+        return meta
+
     def parse(self, xml):
         with log_file_on_exception(xml):
             coords = []
@@ -41,7 +62,7 @@ class XMLParser(object):
             refs = []
             members = []
             root, context = iterparse(xml)
-            
+
             for event, elem in context:
                 if event == 'start': continue
                 if elem.tag == 'tag':
@@ -56,6 +77,9 @@ class XMLParser(object):
                     if tags and self.nodes_callback:
                         if self.marshal_elem_data:
                             nodes.append((osmid, dumps((tags, (x, y)), 2)))
+                        elif self.with_metadata:
+                            nodes.append((osmid, tags, (x, y),
+                                          self.get_metadata(elem)))
                         else:
                             nodes.append((osmid, tags, (x, y)))
                     tags = {}
@@ -70,6 +94,9 @@ class XMLParser(object):
                     if self.ways_callback:
                         if self.marshal_elem_data:
                             ways.append((osm_id, dumps((tags, refs), 2)))
+                        elif self.with_metadata:
+                            ways.append((osm_id, tags, refs,
+                                         self.get_metadata(elem)))
                         else:
                             ways.append((osm_id, tags, refs))
                     refs = []
@@ -80,12 +107,19 @@ class XMLParser(object):
                         self.relations_tag_filter(tags)
                     if tags and self.relations_callback:
                         if self.marshal_elem_data:
-                            relations.append((osm_id, dumps((tags, members), 2)))
+                            relations.append(
+                                (osm_id, dumps((tags, members), 2))
+                            )
+                        elif self.with_metadata:
+                            relations.append(
+                                (osm_id, tags, members,
+                                 self.get_metadata(elem))
+                            )
                         else:
                             relations.append((osm_id, tags, members))
                     members = []
                     tags = {}
-            
+
                 if len(coords) >= 512:
                     self.coords_callback(coords)
                     coords = []
@@ -100,7 +134,7 @@ class XMLParser(object):
                     ways = []
 
                 root.clear()
-        
+
             if self.coords_callback:
                 self.coords_callback(coords)
             if self.nodes_callback:

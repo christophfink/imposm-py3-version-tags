@@ -79,7 +79,8 @@ class XMLMultiProcParser(object):
     relations_tag_filter = None
 
     def __init__(self, pool_size, nodes_queue=None, ways_queue=None,
-        relations_queue=None, coords_queue=None, marshal_elem_data=False):
+        relations_queue=None, coords_queue=None, marshal_elem_data=False,
+        with_metadata=False):
         self.pool_size = pool_size
         self.pool = []
         self.nodes_callback = nodes_queue.put if nodes_queue else None
@@ -90,6 +91,7 @@ class XMLMultiProcParser(object):
         self.mmap_pool = MMapPool(pool_size*8, xml_chunk_size*8)
         self.mmap_queue = multiprocessing.JoinableQueue(8)
         self.marshal_elem_data = marshal_elem_data
+        self.with_metadata = with_metadata
 
     def parse(self, stream):
         assert not self.pool
@@ -102,6 +104,7 @@ class XMLMultiProcParser(object):
                 ways_tag_filter=self.ways_tag_filter,
                 relations_tag_filter=self.relations_tag_filter,
                 marshal_elem_data=self.marshal_elem_data,
+                with_metadata=self.with_metadata
             )
             self.pool.append(proc)
             proc.start()
