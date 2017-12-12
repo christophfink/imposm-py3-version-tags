@@ -22,7 +22,7 @@ from marshal import dumps
 
 from imposm.parser.pbf import OSMPBF
 
-SUPPORTED_FEATURES = set(['OsmSchema-V0.6', 'DenseNodes'])
+SUPPORTED_FEATURES = set(['OsmSchema-V0.6', 'DenseNodes', 'HistoricalInformation'])
 
 
 _MEMBERTYPE = {0 : 'node',
